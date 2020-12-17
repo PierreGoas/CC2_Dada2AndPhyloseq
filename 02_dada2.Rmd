@@ -22,7 +22,7 @@ list.files(path)
 ```{r}
 fnFs <- sort(list.files(path, pattern="_R1.fastq", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern="_R2.fastq", full.names = TRUE))
-sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+sample.names <- sapply(strsplit(basename(fnFs), "R"), `[`, 1)
 ```
 
 ```{r}
@@ -111,6 +111,8 @@ head(track)
 ```
 
 ```{r}
-taxa <- assignTaxonomy(seqtab.nochim, "~/CC2_Dada2AndPhyloseq/structSSI_1.1.1.tar.gz", multithread=TRUE)
+library(phyloseq)
+library(Biostrings)
+library(ggplot2)
 ```
 
