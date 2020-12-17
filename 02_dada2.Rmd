@@ -110,9 +110,68 @@ rownames(track) <- sample.names
 head(track)
 ```
 
+```{bash}
+wget https://zenodo.org/record/3986799/files/silva_nr99_v138_train_set.fa.gz
+```
+
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, "~/CC2_Dada2AndPhyloseq/silva_nr99_v138_train_set.fa.gz", multithread=TRUE)
+```
+
+```{r}
+taxa.print <- taxa
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+
 ```{r}
 library(phyloseq)
 library(Biostrings)
 library(ggplot2)
+```
+
+```{r}
+samples.out <- rownames(seqtab.nochim)
+subject <- sapply(strsplit(samples.out, "Y"), `[`, 1)
+echantillon <- substr(subject,10,100)
+subject <- substr(subject,1,999)
+date <- as.integer(sapply(strsplit(samples.out, "D"), `[`, 2))
+profondeur <- substr(subject,7,15)
+samdf <- data.frame(Subject=subject, Echantillon=echantillon, Date=date, Profondeur=profondeur)
+samdf$When <- "Sep14"
+samdf$When[samdf$Date!="Sep14"] <- "Mars15"
+rownames(samdf) <- samples.out
+```
+
+```{r}
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa))
+ps <- prune_samples(sample_names(ps) != "Mock", ps)
+```
+
+```{r}
+dna <- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) <- taxa_names(ps)
+ps <- merge_phyloseq(ps, dna)
+taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
+ps
+```
+
+```{r}
+plot_richness(ps, x="Year", measures=c("Shannon", "Simpson"), color="When")
+```
+
+```{r}
+help(sapply)
+```
+
+```{r}
+ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
+ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
+```
+
+```{r}
+plot_ordination(ps.prop, ord.nmds.bray, color="When", title="Bray NMDS")
 ```
 
