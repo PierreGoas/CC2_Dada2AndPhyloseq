@@ -132,15 +132,31 @@ library(ggplot2)
 
 ```{r}
 samples.out <- rownames(seqtab.nochim)
+profondeur <- sapply(strsplit(samples.out, "_"), `[`, 2)
+profondeur <- (sapply(strsplit(samples.out, "_"), `[`, 3))
+date <- substr(profondeur,1,11)
+samdf <- data.frame(Profondeur=profondeur, Date=date)
+samdf$Profondeur <- c("Fond","Fond","Fond","Fond","Fond", "Median","Median","Surface","Surface","Surface","Surface")
+samdf$Date[samdf$Profondeur==11] <- c("mars","sept")
+rownames(samdf) <- samples.out
+```
+
+
+```{r}
+samples.out <- rownames(seqtab.nochim)
 subject <- sapply(strsplit(samples.out, "Y"), `[`, 1)
 echantillon <- substr(subject,10,999)
 subject <- substr(subject,1,999)
-date <- sapply(strsplit(samples.out, "D"), `[`, 2)
-profondeur <- substr(subject,10,17)
+date <- sapply(strsplit(samples.out, "_"), `[`, 3)
+profondeur <- sapply(strsplit(samples.out, "_"), `[`, 2)
 samdf <- data.frame(Subject=subject, Echantillon=echantillon, Date=date, Profondeur=profondeur)
-samdf$When <- "Sep14"
-samdf$When[samdf$Date!="Sep14"] <- "Mars15"
+samdf$date <- "Sep14" [samdf$Date!="Sep14"] 
+samdf$date <- "Mars15" [samdf$Date!="Mars15"] 
 rownames(samdf) <- samples.out
+```
+
+```{r}
+date
 ```
 
 ```{r}
@@ -159,7 +175,7 @@ ps
 ```
 
 ```{r}
-plot_richness(ps, x="Date", measures=c("Shannon", "Simpson"), color="When")
+plot_richness(ps, x="Profondeur", measures=c("Shannon", "Simpson"), color="Date")
 ```
 
 ```{r}
@@ -168,10 +184,22 @@ help(sapply)
 
 ```{r}
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
-ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray")
+ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
 ```
 
 ```{r}
-plot_ordination(ps.prop, ord.nmds.bray, color="When", title="Bray NMDS")
+plot_ordination(ps.prop, ord.pcoa.bray, color="Date", title="PCoA Bray")
+```
+
+```{r}
+plot_ordination(ps.prop, ord.pcoa.bray, color="Profondeur", title="PCoA Bray")
+```
+
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Profondeur", fill="Family") + facet_wrap(~Date, scales="free_x")
 ```
 
