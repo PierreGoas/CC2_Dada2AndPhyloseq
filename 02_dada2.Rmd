@@ -188,13 +188,8 @@ ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
 ```
 
 ```{r}
-plot_ordination(ps.prop, ord.pcoa.bray, color="Date", title="PCoA Bray")
+plot_ordination(ps.prop, ord.pcoa.bray, shape = "Date", color="Profondeur", title="PCoA Bray")
 ```
-
-```{r}
-plot_ordination(ps.prop, ord.pcoa.bray, color="Profondeur", title="PCoA Bray")
-```
-
 
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
@@ -203,3 +198,4 @@ ps.top20 <- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x="Profondeur", fill="Family") + facet_wrap(~Date, scales="free_x")
 ```
 
+# Question 2 : On peut voir, qu'entre ces deux graphes, la famille des Cyanoblaceae est présente en 2014 mais pas, ou très peu, en 2015. De même pour la famille des Rhodobacteraceaea. Ces deux familles peuvent constituer des marqueurs pour savoir comment la communauté microbienne évolue et déduire quelles bactéries seront plus présentes que d'autres.
