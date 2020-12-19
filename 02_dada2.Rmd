@@ -29,9 +29,13 @@ sample.names <- sapply(strsplit(basename(fnFs), "R"), `[`, 1)
 plotQualityProfile(fnFs[1:2])
 ```
 
+On observe une forte diminution du score de qualité vers 240 nucléotide. La coupure se fera ici.
+
 ```{r}
 plotQualityProfile(fnRs[1:2])
 ```
+
+On observe une forte diminution vers 200 nucléotides. Par rapport à fnFs, le score de qualité est moins bien.
 
 ```{r}
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_Ffilt.fastq.gz"))
@@ -59,6 +63,11 @@ errR <- learnErrors(filtRs, multithread=TRUE)
 plotErrors(errF, nominalQ=TRUE)
 ```
 
+Représentation des fréquences d'erreurs estimées.
+Points gris : taux d'erreurs observées pour chacun des scores de qualité consensus.
+Ligne noire : taux d'erreurs estimé après que l'algorithme ait réuni toutes les informations liée aux taux d'erreurs estimés
+Ligne rouge : taux d'erreurs attendu selon le Q-score
+
 ```{r}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
 ```
@@ -80,6 +89,8 @@ dadaRs[[1]]
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
 ```
 
+Formation des contigues
+
 ```{r}
 head(mergers[[1]])
 ```
@@ -89,6 +100,7 @@ seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 ```
 
+Construction de la table d'OTU (ASV). Sur les 11 échantillons, 19426 tables ont été créées
 ```{r}
 table(nchar(getSequences(seqtab)))
 ```
@@ -98,10 +110,12 @@ seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE
 dim(seqtab.nochim)
 ```
 
+Elimination des séquences chimériques
+
 ```{r}
 sum(seqtab.nochim)/sum(seqtab)
 ```
-Ces séquences représentent 23% de notre jeu de données.
+Ces séquences chimères représentent 23% de notre jeu de données.
 
 ```{r}
 getN <- function(x) sum(getUniques(x))
@@ -145,15 +159,12 @@ rownames(samdf) <- samples.out
 ```
 
 ```{r}
-date
-```
-
-```{r}
 ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
                sample_data(samdf), 
                tax_table(taxa))
-ps <- prune_samples(sample_names(ps) != "Mock", ps)
 ```
+
+Construction de l'objet PhyloSeq : on associe la table des OTU, les données des échantillons et de la table taxonomique à ps. La dernière ligne permet d'enlever la communité artificielle ("mock")
 
 ```{r}
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
@@ -170,10 +181,6 @@ plot_richness(ps, x="Profondeur", measures=c("Shannon", "Simpson"), color="Date"
 La date du 10 Septembre sera considéré comme celui de l'été tandis que le 11 Mars 2015, comme celui de l'hiver.
 A partir de ces graphes, on peut voir qu'il n'y a pas de grande différence entre les communautés microbiennes des fonds marins entre les deux dates. Pour les échantillons Median, il n'y a pas d'éléments à la date du 11 Mars 2015 mais on peut voir que les deux échatillons sont proches entre eux. Enfin, les échantillons de Surface sont nettement différents entre les deux périodes. Cela peut s'expliquer pour l'intensité lumineuse, qui est plus forte et plus longue en été qu'en hiver et que certaines bactéries (comme les cyanoblaceae que nous verrons plus tard) sont bien plus présentes. De même pour la température, corrélée à l'intensité lumineuse, qui est plus en été et dont seules les bactéries mésophiles pourront croître.
 Concernant les fonds marins, on n'observe pas de grandes différences car les bactéries présentes sont très peu affectées par les changements de saisons. On retrouvera les mêmes bactéries présentes continuellement au cours de l'année, celles ne nécessitant pas d'énergie lumineuse, d'oxygène ou pouvant croître à des températures assez faibles.
-
-```{r}
-help(sapply)
-```
 
 ```{r}
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
