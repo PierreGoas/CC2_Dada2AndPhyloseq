@@ -1,0 +1,104 @@
+---
+title: "R Notebook"
+output: github_document
+---
+
+``` {bash}
+sudo apt-get update -y
+sudo apt-get install -y libbz2-dev
+sudo apt-get install -y liblzma-dev
+```
+
+#package install
+
+Following instruction on https://benjjneb.github.io/dada2/dada-installation.html
+
+```{r package install}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(version = '3.11')
+BiocManager::install("dada2", version = "3.11")
+```
+
+```{r}
+BiocManager::install("phyloseq")
+```
+
+```{r}
+library(phyloseq); packageVersion("phyloseq")
+```
+
+```{r}
+library(Biostrings); packageVersion("Biostrings")
+```
+
+```{r}
+library(ggplot2); packageVersion("ggplot2")
+```
+
+```{r}
+theme_set(theme_bw())
+```
+
+```{r}
+BiocManager::install("DECIPHER")
+```
+
+```{r}
+BiocManager::install("phangorn")
+```
+
+```{r}
+BiocManager::install("gridExtra")
+```
+
+```{r}
+BiocManager::install("BiocStyle")
+```
+
+```{r}
+library("DECIPHER")
+```
+
+```{r}
+install.packages("gridExtra")
+```
+
+```{r}
+BiocManager::install("Bioconductor")
+```
+
+```{r}
+.cran_packages <- c( "shiny","miniUI", "caret", "pls", "e1071", "ggplot2", "randomForest", "dplyr", "ggrepel", "nlme", "devtools",
+                  "reshape2", "PMA", "structSSI", "ade4",
+                  "ggnetwork", "intergraph", "scales")
+.github_packages <- c("jfukuyama/phyloseqGraphTest")
+.bioc_packages <- c("genefilter", "impute")
+```
+
+```{r}
+install.packages(.cran_packages)
+devtools::install_github(.github_packages)
+BiocManager::install(.bioc_packages)
+```
+
+```{r}
+BiocManager::install("DESeq2")
+```
+
+```{bash}
+wget https://cran.r-project.org/src/contrib/Archive/structSSI/structSSI_1.1.1.tar.gz
+```
+
+```{r}
+library(devtools)
+install_local("./structSSI_1.1.1.tar.gz")
+```
+
+```{r}
+install.packages("rmarkdown")
+```
+
+```{r}
+install.packages("knitr")
+```
