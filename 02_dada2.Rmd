@@ -1,5 +1,6 @@
 ---
 title: "R Notebook"
+author: "Pierre Goasdoue"
 output: 
   github_document:
     toc: TRUE
@@ -9,11 +10,14 @@ output:
 #1/ quelles sont les influences relative de la profondeur et de la saison sur la structure des communautes planctoniques de la rade de Brest
 #2/ Quels sont les biomarkeurs de saison (hivers et ete) ?
 
+
+# Dada2
 ```{r}
 library(Rcpp)
 library(dada2)
 ```
 
+## Importation des librairies et préparation des données
 ```{r}
 path <- "~/CC2_Dada2AndPhyloseq/St_Stratif_11mars15"
 list.files(path)
@@ -25,6 +29,7 @@ fnRs <- sort(list.files(path, pattern="_R2.fastq", full.names = TRUE))
 sample.names <- sapply(strsplit(basename(fnFs), "R"), `[`, 1)
 ```
 
+## Inspection des profils de qualité des reads
 ```{r}
 plotQualityProfile(fnFs[1:2])
 ```
@@ -37,6 +42,7 @@ plotQualityProfile(fnRs[1:2])
 
 On observe une forte diminution vers 200 nucléotides. Par rapport à fnFs, le score de qualité est moins bien. La coupure se fera à 200.
 
+## Filtration et tri des donnnées
 ```{r}
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_Ffilt.fastq.gz"))
 filtRs <- file.path(path, "filtered", paste0(sample.names, "_Rfilt.fastq.gz"))
@@ -51,6 +57,7 @@ out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,200), trimLeft =
 head(out)
 ```
 
+## Calcul des erreurs et visualisation de ces derniers
 ```{r}
 errF <- learnErrors(filtFs, multithread=TRUE)
 ```
@@ -72,6 +79,7 @@ Points gris : taux d'erreurs observées pour chacun des scores de qualité conse
 Ligne noire : taux d'erreurs estimé après que l'algorithme ait réuni toutes les informations liée aux taux d'erreurs estimés
 Ligne rouge : taux d'erreurs attendu selon le Q-score
 
+## Application de Dada2 aux données
 ```{r}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
 ```
@@ -85,12 +93,15 @@ dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
 dadaFs[[1]]
 ```
 
+Dada2 a déduit 1010 séquences variantes à partir des 37907 séquences uniques de F.
+
 ```{r}
 dadaRs[[1]]
 ```
 
-Dada2 a déduit 869 séquences variantes à partir des 45486 séquences uniques.
+Dada2 a déduit 869 séquences variantes à partir des 45486 séquences uniques de R.
 
+## Alignement des séquences Forward et Reverse
 ```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
 ```
@@ -101,6 +112,7 @@ Formation des contigues
 head(mergers[[1]])
 ```
 
+## Table d'observation
 ```{r}
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
@@ -112,6 +124,7 @@ Construction de la table d'OTU (ASV). Sur les 11 échantillons, 19426 tables ont
 table(nchar(getSequences(seqtab)))
 ```
 
+## Elimination des séquences chimériques
 ```{r}
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 dim(seqtab.nochim)
@@ -122,8 +135,10 @@ Elimination des séquences chimériques
 ```{r}
 sum(seqtab.nochim)/sum(seqtab)
 ```
+
 Ces séquences chimères représentent 23% de notre jeu de données.
 
+## Résumé des opérations effectuées précédement
 ```{r}
 getN <- function(x) sum(getUniques(x))
 track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
@@ -132,6 +147,7 @@ rownames(track) <- sample.names
 head(track)
 ```
 
+## Téléchargement des données Silva
 ```{bash}
 wget https://zenodo.org/record/3986799/files/silva_nr99_v138_train_set.fa.gz
 ```
@@ -146,6 +162,9 @@ rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
 
+# Phyloseq
+
+## Importation des librairies et préparation des données
 ```{r}
 library(phyloseq)
 library(Biostrings)
@@ -181,6 +200,7 @@ taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
 ps
 ```
 
+## Visualisation de l'alpha diversité
 ```{r}
 plot_richness(ps, x="Profondeur", measures=c("Shannon", "Simpson"), color="Date")
 ```
@@ -189,6 +209,7 @@ La date du 10 Septembre sera considérée comme celle de l'été tandis que le 1
 A partir de ces graphes, on peut voir qu'il n'y a pas de grande différence entre les communautés microbiennes des fonds marins entre les deux dates. Pour les échantillons Median, il n'y a pas d'éléments à la date du 11 Mars 2015 mais on peut voir que les deux échatillons sont proches entre eux. Enfin, les échantillons de Surface sont nettement différents entre les deux périodes. Cela peut s'expliquer pour l'intensité lumineuse, qui est plus forte et plus longue en été qu'en hiver et que certaines bactéries (comme les cyanoblaceae que nous verrons plus tard) sont bien plus présentes. De même pour la température, corrélée à l'intensité lumineuse, qui est plus forte en été et dont seules les bactéries mésophiles pourront croître.
 Concernant les fonds marins, on n'observe pas de grandes différences car les bactéries présentes sont très peu affectées par les changements de saisons. On retrouvera les mêmes bactéries présentes continuellement au cours de l'année, celles ne nécessitant pas d'énergie lumineuse, d'oxygène ou pouvant croître à des températures assez faibles.
 
+## Ordination
 ```{r}
 ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
@@ -202,6 +223,7 @@ Question 1 : On retrouve les communautés de Surface aux niveaux des extrêmité
 D'après les résultats du graphique, on observe une corrélation concernant certains échantillons du 10 Septembre 2014 qui forment trois groupes bien distinsts, tandis que les échantillons du 11 Mars 2015 sont isolés entre eux. D'après ces premiers résultats, on peut confirmer que la saison a un impact important sur la composition de la communauté microbienne.
 Concernant sur la profondeur, on observe que les échantillons d'hiver (11 Mars 2015) ne sont pas très différents entre eux, ils sont mêmes similaires, à quelques différences près. Par contre, pour les échantillons d'été (10 Septembre 2014), les différentes sont bien plus nettes. Le groupe isolé en haut, représentant les fonds marins, est bien différent des échantillons de surface et median. Ainsi, on peut confirmer les hypothèses proposées dans la partie sur les indices de similarité sont vraies.
 
+## Représention des échantillons en "histogramme" (bar plot)
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
