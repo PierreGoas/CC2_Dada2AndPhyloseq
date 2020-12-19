@@ -35,7 +35,7 @@ On observe une forte diminution du score de qualité vers 240 nucléotide. La co
 plotQualityProfile(fnRs[1:2])
 ```
 
-On observe une forte diminution vers 200 nucléotides. Par rapport à fnFs, le score de qualité est moins bien.
+On observe une forte diminution vers 200 nucléotides. Par rapport à fnFs, le score de qualité est moins bien. La coupure se fera à 200.
 
 ```{r}
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_Ffilt.fastq.gz"))
@@ -55,9 +55,13 @@ head(out)
 errF <- learnErrors(filtFs, multithread=TRUE)
 ```
 
+Estimation du taux d'erreur de filtFs
+
 ```{r}
 errR <- learnErrors(filtRs, multithread=TRUE)
 ```
+
+Estimation du taux d'erreur de filtRs
 
 ```{r}
 plotErrors(errF, nominalQ=TRUE)
@@ -85,6 +89,8 @@ dadaFs[[1]]
 dadaRs[[1]]
 ```
 
+Dada2 a déduit 869 séquences variantes à partir des 45486 séquences uniques.
+
 ```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
 ```
@@ -101,6 +107,7 @@ dim(seqtab)
 ```
 
 Construction de la table d'OTU (ASV). Sur les 11 échantillons, 19426 tables ont été créées
+
 ```{r}
 table(nchar(getSequences(seqtab)))
 ```
@@ -164,7 +171,7 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
                tax_table(taxa))
 ```
 
-Construction de l'objet PhyloSeq : on associe la table des OTU, les données des échantillons et de la table taxonomique à ps. La dernière ligne permet d'enlever la communité artificielle ("mock")
+Construction de l'objet PhyloSeq : on associe la table des OTU, les données des échantillons et de la table taxonomique à ps.
 
 ```{r}
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
@@ -178,8 +185,8 @@ ps
 plot_richness(ps, x="Profondeur", measures=c("Shannon", "Simpson"), color="Date")
 ```
 
-La date du 10 Septembre sera considéré comme celui de l'été tandis que le 11 Mars 2015, comme celui de l'hiver.
-A partir de ces graphes, on peut voir qu'il n'y a pas de grande différence entre les communautés microbiennes des fonds marins entre les deux dates. Pour les échantillons Median, il n'y a pas d'éléments à la date du 11 Mars 2015 mais on peut voir que les deux échatillons sont proches entre eux. Enfin, les échantillons de Surface sont nettement différents entre les deux périodes. Cela peut s'expliquer pour l'intensité lumineuse, qui est plus forte et plus longue en été qu'en hiver et que certaines bactéries (comme les cyanoblaceae que nous verrons plus tard) sont bien plus présentes. De même pour la température, corrélée à l'intensité lumineuse, qui est plus en été et dont seules les bactéries mésophiles pourront croître.
+La date du 10 Septembre sera considérée comme celle de l'été tandis que le 11 Mars 2015, comme celle de l'hiver.
+A partir de ces graphes, on peut voir qu'il n'y a pas de grande différence entre les communautés microbiennes des fonds marins entre les deux dates. Pour les échantillons Median, il n'y a pas d'éléments à la date du 11 Mars 2015 mais on peut voir que les deux échatillons sont proches entre eux. Enfin, les échantillons de Surface sont nettement différents entre les deux périodes. Cela peut s'expliquer pour l'intensité lumineuse, qui est plus forte et plus longue en été qu'en hiver et que certaines bactéries (comme les cyanoblaceae que nous verrons plus tard) sont bien plus présentes. De même pour la température, corrélée à l'intensité lumineuse, qui est plus forte en été et dont seules les bactéries mésophiles pourront croître.
 Concernant les fonds marins, on n'observe pas de grandes différences car les bactéries présentes sont très peu affectées par les changements de saisons. On retrouvera les mêmes bactéries présentes continuellement au cours de l'année, celles ne nécessitant pas d'énergie lumineuse, d'oxygène ou pouvant croître à des températures assez faibles.
 
 ```{r}
@@ -191,9 +198,9 @@ ord.pcoa.bray <- ordinate(ps.prop, method="PCoA", distance="bray")
 plot_ordination(ps.prop, ord.pcoa.bray, shape = "Date", color="Profondeur", title="PCoA Bray")
 ```
 
-Question 1 : On retrouve les communautés de Surface aux niveaux des extrêmités gauches et droites. On les retrouve les communautés Median isolés à gauche, au niveau de -0.2. Enfin, pour les communautés Fond, on les retrouves en haut du graphe et vers 0.3.
+Question 1 : On retrouve les communautés de Surface aux niveaux des extrêmités gauches et droites. On retrouve les communautés Median isolées à gauche, au niveau de -0.2. Enfin, pour les communautés Fond, on les retrouves en haut du graphe et vers 0.3 de l'axe 1.
 D'après les résultats du graphique, on observe une corrélation concernant certains échantillons du 10 Septembre 2014 qui forment trois groupes bien distinsts, tandis que les échantillons du 11 Mars 2015 sont isolés entre eux. D'après ces premiers résultats, on peut confirmer que la saison a un impact important sur la composition de la communauté microbienne.
-Concernant sur la profondeur, on observe que les échantillons d'hiver (11 Mars 2015) ne sont pas très différents entre eux, ils sont mêmes similiaures, à quelques différences près. Par contre, pour les échantillons d'été (10 Septembre 2014), les différentes sont bien plus nettes. Le groupe isolé en haut, représentant les fonds marins, est bien différent des échantillons de surface et median. Ainsi, on peut confirmer les hypothèses proposées dans la partie sur les indices de similarité.
+Concernant sur la profondeur, on observe que les échantillons d'hiver (11 Mars 2015) ne sont pas très différents entre eux, ils sont mêmes similaires, à quelques différences près. Par contre, pour les échantillons d'été (10 Septembre 2014), les différentes sont bien plus nettes. Le groupe isolé en haut, représentant les fonds marins, est bien différent des échantillons de surface et median. Ainsi, on peut confirmer les hypothèses proposées dans la partie sur les indices de similarité sont vraies.
 
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
@@ -202,7 +209,7 @@ ps.top20 <- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x="Profondeur", fill="Family") + facet_wrap(~Date, scales="free_x")
 ```
 
-Question 2 : On peut voir, qu'entre ces deux graphes, la famille des Cyanoblaceae est présente en 2014 mais pas, ou très peu, en 2015. De même pour la famille des Rhodobacteraceaea. Ces deux familles peuvent constituer des marqueurs pour savoir comment la communauté microbienne évolue et déduire quelles bactéries seront plus présentes que d'autres.
+Question 2 : On peut voir, qu'entre ces deux graphes, la famille des Cyanoblaceae est présente en 2014 mais pas, ou très peu, en 2015. De même pour la famille des Rhodobacteraceaea. Ces deux familles peuvent constituer des biomarqueurs pour savoir comment la communauté microbienne évolue et déduire quelles bactéries seront plus présentes que d'autres en fonction des saisons.
 
 
 ```{r}
@@ -212,6 +219,4 @@ ps.top20 <- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x="Profondeur", fill="Genus") + facet_wrap(~Date, scales="free_x")
 ```
 
-En regardant les genres présents dans les familles, on peut voir que les Synechococcus CC9902, de la famille des Cyanoblaceae qui prédominent en été mais qui est quasi absent en hiver.
-
-#save.image(file="02_CC2_FinalEnv")
+En regardant les genres présents dans les familles, on peut voir que ce sont les Synechococcus CC9902, de la famille des Cyanoblaceae, qui prédominent en été mais qui sont quasi absent en hiver.
